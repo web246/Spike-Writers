@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="styles.css">
+  <title>Spark Writers — Register</title>
+</head>
+<body>
+  <div id="site-header"></div>
+  <main class="container">
+    <div class="card" style="max-width:640px;margin:0 auto">
+      <h1 class="text-center">Create account</h1>
+      <form id="registerForm">
+        <div class="form-row"><div class="col"><label>Full name <input name="name" type="text" required></label></div></div>
+        <div class="form-row"><div class="col"><label>Email <input name="email" type="email" required></label></div></div>
+        <div class="form-row"><div class="col"><label>Role <select name="role"><option value="client">Client</option><option value="writer">Writer</option></select></label></div></div>
+        <div class="form-row"><div class="col"><label>Password <input name="password" type="password" required></label></div></div>
+        <div class="stack"><button class="btn btn-primary" type="submit">Create account</button> <a class="btn btn-outline" href="login.html">Have an account? Sign in</a></div>
+      </form>
+      <p id="regMsg" class="muted"></p>
+    </div>
+  </main>
+  <div id="site-footer"></div>
+  <script src="assets/includes-loader.js"></script>
+  <script src="assets/db.js"></script>
+  <script>
+  (function(){
+    var form = document.getElementById('registerForm'); var msg = document.getElementById('regMsg');
+    // Prefill email from query string if provided (e.g., redirect from login)
+    try{
+      var params = new URLSearchParams(location.search);
+      var pre = params.get('email'); if(pre){ var emailInput = form.querySelector('input[name="email"]'); if(emailInput) emailInput.value = pre; }
+    }catch(e){ /* ignore */ }
+    form.addEventListener('submit', function(e){
+      e.preventDefault(); msg.textContent=''; var f=new FormData(form); var name=f.get('name'), email=f.get('email'), role=f.get('role'), pass=f.get('password');
+      if(!window._DB || !window._DB.ready){ msg.textContent='Database not ready.'; return; }
+      window._DB.ready.then(function(){
+        var auth = window._DB && window._DB.auth;
+        if(auth && typeof auth.signUp === 'function'){
+          // Supabase flow or auth-capable backend
+          return auth.signUp({ email: email, password: pass, name: name, role: role }).then(function(res){
+            // res may contain profile or auth info depending on implementation
+            var profile = res && (res.profile || (res.data && res.data[0]) || (res.profile && res.profile[0]));
+            if(role==='writer'){
+              msg.textContent = 'Account created — please complete payment to activate your writer account.';
+              var id = profile && profile.id ? profile.id : (res && res.profile && res.profile.id ? res.profile.id : '');
+              setTimeout(function(){ location.href = 'pay.html?user='+encodeURIComponent(id); },800);
+              return;
+            }
+            // For clients, attempt to sign in then set currentUser
+            return (auth.signIn? auth.signIn({email: email, password: pass}).then(function(){ return profile; }) : Promise.resolve(profile)).then(function(profileRow){
+              localStorage.setItem('currentUser', JSON.stringify({id:profileRow.id,role:profileRow.role,name:profileRow.name,email:profileRow.email}));
+              document.dispatchEvent(new Event('site:auth-changed'));
+              msg.textContent = 'Account created — redirecting to dashboard...';
+              setTimeout(function(){ location.href = 'clients_index.html'; },800);
+            });
+          });
+        }
+        // Fallback demo flow using createUser
+        var createFn = window._DB.createUser || window._DB.create_user || function(d){ return Promise.reject('createUser not supported'); };
+        var userPayload = { name: name, email: email, role: role, password: pass };
+        if(role === 'writer') userPayload.active = 0;
+        return createFn(userPayload).then(function(created){
+          if(role === 'writer'){
+            msg.textContent = 'Account created — please complete payment to activate your writer account.';
+            setTimeout(function(){ location.href = 'pay.html?user='+encodeURIComponent(created.id); },800);
+            return;
+          }
+          localStorage.setItem('currentUser', JSON.stringify({id:created.id,role:created.role,name:created.name,email:created.email}));
+          document.dispatchEvent(new Event('site:auth-changed'));
+          msg.textContent = 'Account created — redirecting to dashboard...';
+          setTimeout(function(){ location.href = 'clients_index.html'; },800);
+        });
+      }).catch(function(err){ msg.textContent='Failed to create account: '+(err && err.message?err.message:err); });
+    });
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<footer class="site-footer">
+  <div class="container">
+    <p>&copy; <span id="year">2025</span> Spark Writers — Built with care.</p>
+  </div>
+</footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  var y = new Date().getFullYear(); var el = document.getElementById('year'); if (el) el.textContent = y;
+});
+
+// small UI helpers: toggle password visibility
+document.addEventListener('click', function(e){
+  if (e.target && e.target.dataset && e.target.dataset.toggle === 'password'){
+    var input = document.querySelector(e.target.dataset.target);
+    if (!input) return;
+    if (input.type === 'password') { input.type = 'text'; e.target.textContent='Hide'; }
+    else { input.type = 'password'; e.target.textContent='Show'; }
+  }
+});
+
+// Smooth scroll and reveal-on-scroll (basic)
+(function(){
+  document.documentElement.classList.add('smooth-scroll');
+  var obs = new IntersectionObserver(function(entries){ entries.forEach(function(e){ if (e.isIntersecting) e.target.classList.add('in'); }); }, {threshold:0.12});
+  document.querySelectorAll('.reveal').forEach(function(el){ obs.observe(el); });
+})();
+</script>

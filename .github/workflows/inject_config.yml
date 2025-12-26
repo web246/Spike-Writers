@@ -1,0 +1,27 @@
+name: Inject config (optional)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  inject-config:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Create assets/config.js from secrets
+        run: |
+          cat > assets/config.js <<EOF
+          window.APP_CONFIG = {
+            SUPABASE_URL: "${{ secrets.SUPABASE_URL }}",
+            SUPABASE_ANON_KEY: "${{ secrets.SUPABASE_ANON_KEY }}",
+            ADMIN_EMAILS: ["websitesbrian585@gmail.com"]
+          };
+          EOF
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add assets/config.js
+          git commit -m "Inject Supabase config from secrets" || echo "no changes"
+          git push origin main || echo "push failed"

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Dashboard â€” Spark Writers</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="site-header"></div>
+  <main class="container">
+    <h2>Find Writers</h2>
+    <p class="muted">Search and browse registered writers. Click a profile to view details or start a chat.</p>
+
+    <div class="card">
+      <p class="muted">This dashboard shows writer listings for clients. As a writer you can <a href="profile-edit.html">edit your profile</a> or view your stats.</p>
+    </div>
+
+    <div style="margin:1rem 0 1.5rem 0;display:flex;gap:0.75rem;align-items:center">
+      <form id="searchForm" style="flex:1;display:flex;gap:0.5rem">
+        <input id="q" name="q" placeholder="Search writers by name, headline or skills" style="flex:1;padding:0.6rem;border-radius:8px;background:transparent;border:1px solid rgba(255,255,255,0.04)">
+        <button class="btn" type="submit">Search</button>
+      </form>
+        
+    <div id="writersResults" class="cards-grid"></div>
+
+  </main>
+  <div id="site-footer"></div>
+  <script src="/spark-writers/assets/includes-loader.js"></script>
+  <script src="/spark-writers/assets/db.js"></script>
+  <script>
+  function renderWriterCard(w){
+    var d=document.createElement('div'); d.className='card';
+    d.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:flex-start"><div><h3 style="margin:0;font-size:1.05rem">'+(w.name||'')+'</h3><div class="muted" style="margin-top:0.25rem">'+(w.headline||'')+'</div><div style="margin-top:0.5rem;color:#dfefff">Expertise: '+(w.skills||'General writing')+'</div></div><div style="text-align:right"><div class="muted">Rating: '+(Math.round((w.avg_rating||0)*100)/100)+' / 5</div><div class="muted">Price: '+(w.price_range||'N/A')+'</div></div></div><div style="display:flex;gap:0.5rem;margin-top:0.75rem"><a class="btn" href="/spark-writers/writer.html?id='+w.id+'">View profile</a> <a class="btn btn-outline" href="/spark-writers/chat.html?to='+w.id+'">Chat</a> <a class="muted" href="mailto:'+encodeURIComponent(w.email||'')+'">Contact</a></div>';
+    return d;
+  }
+
+  window._DB.ready.then(function(){
+    var form = document.getElementById('searchForm'); var qInput = document.getElementById('q'); var out = document.getElementById('writersResults');
+    function doSearch(q){ window._DB.getWriters().then(function(list){ out.innerHTML=''; var filtered = list.filter(function(w){ return !q || (w.name+w.headline+w.skills).toLowerCase().indexOf(q.toLowerCase())>-1; }); if (filtered.length===0) out.innerHTML='<div class="card">No writers found.</div>'; filtered.forEach(function(w){ out.appendChild(renderWriterCard(w)); }); }); }
+    form.addEventListener('submit', function(e){ e.preventDefault(); doSearch(qInput.value); });
+    doSearch('');
+  }).catch(function(){ document.getElementById('writersResults').innerHTML = '<div class="card">Unable to load writers.</div>'; });
+  </script>
+</body>
+</html>
+
+
+
+
+

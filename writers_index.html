@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="styles.css">
+  <title>Writer Dashboard</title>
+</head>
+<body>
+  <div id="site-header"></div>
+  <main class="container">
+    <h1>Writer Dashboard</h1>
+    <p class="muted">Create or update your profile, see open projects and submit bids.</p>
+
+    <section style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div class="card">
+        <h2>Your Profile</h2>
+        <form id="profileForm">
+          <label>Full name <input name="name" required></label>
+          <label>Headline <input name="headline"></label>
+          <label>Bio <textarea name="bio"></textarea></label>
+          <label>Hourly rate (USD) <input name="rate" type="number" min="0"></label>
+          <div style="margin-top:.5rem"><button class="btn" type="submit">Save profile</button></div>
+        </form>
+        <p id="profileMsg" class="muted"></p>
+      </div>
+
+      <div class="card">
+        <h2>Open Projects</h2>
+        <div id="projectsList">Loading projects…</div>
+      </div>
+    </section>
+  </main>
+  <div id="site-footer"></div>
+  <script src="assets/includes-loader.js"></script>
+  <script src="assets/db.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', function(){
+    var form = document.getElementById('profileForm'); var msg = document.getElementById('profileMsg');
+    function loadProfile(){
+      var cu = JSON.parse(localStorage.getItem('currentUser')||'null');
+      if(!cu) return location.href='login.html';
+      // fetch user from DB to get latest fields
+      window._DB.ready.then(function(){ return window._DB.getUsers(); }).then(function(users){
+        var me = users.find(u=> String(u.id) === String(cu.id) || u.email===cu.email) || null;
+        if(me){ form.name.value = me.name||''; form.headline.value = me.headline||''; form.bio.value = me.bio||''; form.rate.value = me.rate||''; }
+      });
+    }
+    form.addEventListener('submit', function(e){ e.preventDefault(); msg.textContent='Saving…'; var f=new FormData(form); var patch={ name:f.get('name'), headline:f.get('headline'), bio:f.get('bio'), rate: parseFloat(f.get('rate')||0) };
+      var cu = JSON.parse(localStorage.getItem('currentUser')||'null'); if(!cu) return location.href='login.html';
+      window._DB.ready.then(function(){ return window._DB.updateUser(cu.id, patch); }).then(function(){ msg.textContent='Saved.'; var nu = JSON.parse(localStorage.getItem('currentUser')||'null')||{}; nu.name = patch.name; localStorage.setItem('currentUser', JSON.stringify(nu)); document.dispatchEvent(new Event('site:auth-changed')); }).catch(function(err){ msg.textContent='Save failed'; console.error(err); });
+    });
+
+    function loadProjects(){ var el=document.getElementById('projectsList'); el.innerHTML='Loading...'; window._DB.ready.then(function(){ return window._DB.getProjects(); }).then(function(projects){ el.innerHTML=''; if(!projects || projects.length===0) { el.innerHTML='<p class="muted">No open projects.</p>'; return; } projects.forEach(function(p){ var d=document.createElement('div'); d.className='card'; d.innerHTML='<h4>'+p.title+'</h4><p class="muted">'+(p.desc||'')+'</p><p>Budget: '+(p.budget||'—')+'</p><div style="margin-top:.5rem"><button class="btn bid" data-id="'+p.id+'">Place Bid</button></div>'; el.appendChild(d); }); el.querySelectorAll('.bid').forEach(function(b){ b.addEventListener('click', function(){ var pid=this.dataset.id; var amt = prompt('Enter your bid amount (USD)'); if(!amt) return; var message = prompt('Optional message to client'); window._DB.createBid({ project_id: pid, writer_id: JSON.parse(localStorage.getItem('currentUser')||'null').id, amount: parseFloat(amt), message: message||'' }).then(function(){ alert('Bid placed'); }).catch(function(e){ alert('Bid failed'); console.error(e); }); }); }); }); }
+
+    loadProfile(); loadProjects();
+  });
+  </script>
+</body>
+</html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="/spark-writers/styles.css">
+  <title>Spark Writers — Top Writers</title>
+</head>
+<body>
+  <div id="site-header"></div>
+  <main class="container">
+    <h1>Top Writers</h1>
+    <p>Top-rated writers (static demo).</p>
+  </main>
+  <div id="site-footer"></div>
+  <script src="/spark-writers/assets/includes-loader.js"></script>
+</body>
+</html>

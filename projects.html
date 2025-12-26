@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="styles.css">
+  <title>Projects — Spark Writers</title>
+</head>
+<body>
+  <div id="site-header"></div>
+  <main class="container">
+    <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <h1>Projects</h1>
+      <div id="userInfo" class="muted"></div>
+    </header>
+
+    <section class="card">
+      <h2>Post a Project</h2>
+      <form id="postProject">
+        <label>Title <input name="title" required></label>
+        <label>Description <textarea name="desc"></textarea></label>
+        <label>Budget (USD) <input name="budget" type="number" min="0"></label>
+        <div style="margin-top:.5rem"><button class="btn" type="submit">Post Project</button></div>
+      </form>
+      <p id="postMsg" class="muted"></p>
+    </section>
+
+    <section style="margin-top:1rem">
+      <h2>Open Projects</h2>
+      <div id="projectsList">Loading...</div>
+    </section>
+  </main>
+  <div id="site-footer"></div>
+  <script src="assets/includes-loader.js"></script>
+  <script src="assets/db.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', function(){
+    var form = document.getElementById('postProject'); var msg = document.getElementById('postMsg');
+    var ui = document.getElementById('userInfo'); var cu = JSON.parse(localStorage.getItem('currentUser')||'null'); if(cu) ui.textContent = 'Signed in: '+(cu.name||cu.email);
+
+    form.addEventListener('submit', function(e){ e.preventDefault(); var f=new FormData(form); var title=f.get('title'), desc=f.get('desc'), budget=parseFloat(f.get('budget')||0);
+      if(!cu || cu.role!=='client'){ alert('Only clients can post projects.'); return; }
+      window._DB.ready.then(function(){ return window._DB.createProject({ title:title, desc:desc, budget: budget, client_email: cu.email, status:'open' }); }).then(function(){ msg.textContent='Project posted.'; form.reset(); loadProjects(); }).catch(function(err){ msg.textContent='Post failed'; console.error(err); });
+    });
+
+    function loadProjects(){ var el=document.getElementById('projectsList'); el.innerHTML='Loading...'; window._DB.ready.then(function(){ return window._DB.getProjects(); }).then(function(projects){ el.innerHTML=''; if(!projects || projects.length===0){ el.innerHTML='<p class="muted">No open projects.</p>'; return; } projects.forEach(function(p){ var d=document.createElement('div'); d.className='card'; d.innerHTML='<h4>'+p.title+'</h4><p class="muted">'+(p.desc||'')+'</p><p>Budget: '+(p.budget||'—')+'</p><div style="margin-top:.5rem"><button class="btn viewBids" data-id="'+p.id+'">View Bids</button></div>'; el.appendChild(d); }); el.querySelectorAll('.viewBids').forEach(function(b){ b.addEventListener('click', function(){ var pid=this.dataset.id; window._DB.getBids(pid).then(function(bids){ var html = bids.length? bids.map(function(b){ return '<div class="card"><strong>'+ (b.amount || '') +' USD</strong><p>'+ (b.message||'') +'</p></div>'; }).join('') : '<p class="muted">No bids yet.</p>'; var w = window.open('', '_blank'); w.document.write('<html><body><h2>Bids for project '+pid+'</h2>'+html+'</body></html>'); }).catch(function(e){ alert('Failed to load bids'); }); }); }); }); }
+
+    loadProjects();
+  });
+  </script>
+</body>
+</html>

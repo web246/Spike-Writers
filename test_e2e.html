@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Test E2E — Spark Writers</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>pre{white-space:pre-wrap;background:#0b1220;color:#dbeafe;padding:1rem;border-radius:8px}</style>
+</head>
+<body>
+  <div id="site-header"></div>
+  <main class="container">
+    <h1>Automated E2E Test (runs in your browser)</h1>
+    <p class="muted">This page will perform registration, login, writer payment activation, and admin user checks using the site DB client. Open DevTools for console details.</p>
+    <pre id="log">Starting...</pre>
+  </main>
+  <div id="site-footer"></div>
+  <script src="assets/includes-loader.js"></script>
+  <script src="assets/db.js"></script>
+  <script>
+  (function(){
+    function log(txt){ var p=document.getElementById('log'); p.textContent += '\n'+txt; console.log(txt); }
+    async function run(){
+      log('Waiting for DB...');
+      if(!window._DB) { log('No DB client found'); return; }
+      await window._DB.ready;
+      try{
+        if(window._DB.clearDemo) { await window._DB.clearDemo(); log('Cleared demo DB'); }
+      }catch(e){ log('Clear demo failed: '+e); }
+
+      // Admin should be seeded
+      var report = { steps: [] };
+      try{
+        var users = await (window._DB.getUsers ? window._DB.getUsers() : Promise.resolve([]));
+        var admin = users.find(u=>u.email==='websitesbrian585@gmail.com');
+        var present = !!admin;
+        report.steps.push({ step: 'admin_seeded', present: present, admin: admin || null });
+        log('Admin present: '+(admin?('yes id='+admin.id):'no'));
+      }catch(e){ log('Failed reading users: '+e); report.steps.push({ step: 'admin_check_failed', error: String(e) }); }
+
+      // Register client
+      var clientEmail = 'e2e_client@example.com';
+      try{
+        if(window._DB.auth && window._DB.auth.signUp){
+          await window._DB.auth.signUp({ email:clientEmail, password:'pass123', name:'E2E Client', role:'client' });
+          log('Client signed up: '+clientEmail);
+        } else {
+          await window._DB.createUser({ email:clientEmail, password:'pass123', name:'E2E Client', role:'client' });
+          log('Client created (demo): '+clientEmail);
+        }
+      }catch(e){ log('Client signup failed: '+(e.message||e)); }
+
+      // Login client
+      try{
+        var cu = null;
+        if(window._DB.auth && window._DB.auth.signIn){
+          var r = await window._DB.auth.signIn({ email:clientEmail, password:'pass123' });
+          // supabase returns object; fall back
+          cu = (r && r.user) ? { email:r.user.email } : null;
+        } else {
+          cu = await window._DB.auth.signIn({ email:clientEmail, password:'pass123' });
+        }
+        if(cu) { localStorage.setItem('currentUser', JSON.stringify({email:clientEmail,role:'client',name:'E2E Client'})); log('Client logged in'); } else { log('Client login ambiguous'); }
+      }catch(e){ log('Client login failed: '+(e.message||e)); }
+
+      // Register writer (inactive)
+      var writerEmail = 'e2e_writer@example.com'; var writerId = null;
+      try{
+        var created = null;
+        if(window._DB.auth && window._DB.auth.signUp){
+          var res = await window._DB.auth.signUp({ email:writerEmail, password:'pass123', name:'E2E Writer', role:'writer' });
+          // try to get profile
+          created = (res && res.profile) ? res.profile : (res && res.data && res.data[0]) ? res.data[0] : null;
+        } else {
+          created = await window._DB.createUser({ email:writerEmail, password:'pass123', name:'E2E Writer', role:'writer', active:0 });
+        }
+        writerId = created && created.id ? created.id : null;
+        log('Writer created id='+writerId);
+      }catch(e){ log('Writer signup failed: '+(e.message||e)); }
+
+      // Activate writer via DB update (simulate payment)
+      try{
+        if(!writerId) { log('No writer id to activate'); }
+        else {
+          if(window._DB.updateUser) await window._DB.updateUser(writerId, { active: 1 });
+          else if(window._DB.supa) await window._DB.supa.from('users').update({ active:true }).eq('id', writerId);
+          log('Writer activated id='+writerId);
+        }
+      }catch(e){ log('Activation failed: '+(e.message||e)); }
+
+      // Login writer
+      try{
+        if(window._DB.auth && window._DB.auth.signIn){
+          await window._DB.auth.signIn({ email:writerEmail, password:'pass123' });
+        }
+        localStorage.setItem('currentUser', JSON.stringify({email:writerEmail,role:'writer',name:'E2E Writer'}));
+        log('Writer login attempted');
+      }catch(e){ log('Writer login failed: '+(e.message||e)); }
+
+      // Admin view: fetch users
+      try{
+        var all = await (window._DB.getUsers ? window._DB.getUsers() : Promise.resolve([]));
+        log('Total users in DB: '+(all && all.length));
+        var adminUser = all.find(u=>u.email==='websitesbrian585@gmail.com');
+        log('Admin present after operations: '+(adminUser? 'yes': 'no'));
+      }catch(e){ log('Failed to list users: '+e); }
+
+      // Finalize report
+      try{
+        var all = await (window._DB.getUsers ? window._DB.getUsers() : Promise.resolve([]));
+        report.summary = { total_users: all.length };
+      }catch(e){ report.summary = { error: String(e) }; }
+      try{
+        var blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a'); a.href = url; a.download = 'e2e_report.json'; a.textContent = 'Download E2E report'; a.className='btn btn-outline';
+        document.getElementById('log').insertAdjacentHTML('afterend', '<div style="margin:1rem 0"></div>');
+        document.getElementById('log').insertAdjacentElement('afterend', a);
+        log('E2E test completed. Report ready for download.');
+      }catch(e){ log('Failed to create report: '+e); }
+    }
+    document.addEventListener('DOMContentLoaded', run);
+  })();
+  </script>
+</body>
+</html>

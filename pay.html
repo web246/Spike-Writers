@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="styles.css">
+  <title>Complete Payment</title>
+</head>
+<body>
+  <div id="site-header"></div>
+  <main class="container">
+    <div class="card" style="max-width:720px;margin:1.5rem auto;text-align:center">
+      <h1>Payment</h1>
+      <p id="payDesc" class="muted">Completing payment will activate your writer account.</p>
+      <div id="userRow" style="margin:1rem 0"></div>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:1rem">
+        <button id="payBtn" class="btn">Simulate Payment (KES 200)</button>
+        <a id="cancelBtn" class="btn btn-outline" href="index.html">Cancel</a>
+      </div>
+      <p id="payMsg" class="muted" style="margin-top:1rem"></p>
+    </div>
+  </main>
+  <div id="site-footer"></div>
+  <script src="assets/includes-loader.js"></script>
+  <script src="assets/db.js"></script>
+  <script>
+  (function(){
+    function qs(name){ var p = new URLSearchParams(location.search); return p.get(name); }
+    function showUser(u){ var row = document.getElementById('userRow'); if(!u) { row.innerHTML = '<p class="muted">User not found.</p>'; return; } row.innerHTML = '<h3>'+ (u.name||u.email) +'</h3><p class="muted">Role: '+(u.role||'')+' • Joined: '+(u.joined_at||'')+'</p>' }
+
+    var uid = qs('user'); if(!uid){ document.getElementById('payMsg').textContent = 'No user specified.'; }
+
+    function getUserById(id){
+      if(window._DB && typeof window._DB.getUsers === 'function'){
+        return window._DB.getUsers().then(function(list){ return list.find(function(x){ return String(x.id)===String(id); }) || null; });
+      }
+      try{
+        var rows = window._DB.query("SELECT * FROM users WHERE id="+id+" LIMIT 1");
+        return Promise.resolve(rows && rows.length? rows[0] : null);
+      }catch(e){ return Promise.reject(e); }
+    }
+
+    function activateUser(id){
+      if(window._DB && typeof window._DB.updateUser === 'function'){
+        return window._DB.updateUser(Number(id), { active: 1 });
+      }
+      // fallback: if using Supabase wrapper
+      if(window._DB && window._DB.mode==='supabase' && window._DB.supa){
+        return window._DB.supa.from('users').update({ active: true }).eq('id', id).then(function(r){ if(r.error) return Promise.reject(r.error); return r.data && r.data[0]; });
+      }
+      return Promise.reject('No updateUser available');
+    }
+
+    window._DB.ready.then(function(){
+      if(!uid) return;
+      getUserById(uid).then(function(u){ showUser(u); }).catch(function(e){ document.getElementById('payMsg').textContent = 'Unable to load user: '+e; });
+    }).catch(function(e){ document.getElementById('payMsg').textContent = 'DB not ready: '+e; });
+
+    document.getElementById('payBtn').addEventListener('click', function(){
+      var msg = document.getElementById('payMsg'); msg.textContent = '';
+      if(!uid){ msg.textContent = 'Missing user id.'; return; }
+      document.getElementById('payBtn').disabled = true; document.getElementById('payBtn').textContent = 'Processing...';
+      // simulate async payment delay
+      setTimeout(function(){
+        activateUser(uid).then(function(updated){
+          // update session if same user
+          try{ var cu = JSON.parse(localStorage.getItem('currentUser')||'null'); if(cu && String(cu.id)===String(uid)){ cu.active = 1; localStorage.setItem('currentUser', JSON.stringify(cu)); } }catch(e){}
+          msg.textContent = 'Payment successful — account activated.';
+          setTimeout(function(){ location.href = 'writers_index.html'; },900);
+        }).catch(function(err){ console.error(err); msg.textContent = 'Activation failed: '+(err && err.message?err.message:err); document.getElementById('payBtn').disabled = false; document.getElementById('payBtn').textContent = 'Simulate Payment (KES 200)'; });
+      }, 900);
+    });
+  })();
+  </script>
+</body>
+</html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="/spark-writers/styles.css">
+  <title>Pay</title>
+</head>
+<body>
+  <div id="site-header"></div>
+  <main class="container">
+    <h1>Pay</h1>
+    <p>Payment initiation is disabled in static mode. Use Vercel serverless functions for MPesa integration.</p>
+  </main>
+  <div id="site-footer"></div>
+  <script src="/spark-writers/assets/includes-loader.js"></script>
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Spark Writers â€” Home</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>.cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem}</style>
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <main class="container">
+    <!-- Hero -->
+    <section id="home" class="hero blue-hero reveal">
+      <div class="hero-inner">
+        <h1 class="hero-title">Find trusted writers, fast</h1>
+        <p class="hero-sub">Hire verified writers for essays, marketing copy, blog posts and more. Secure payments, clear briefs and on-time delivery.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="login.html?next=writers.html" id="browse-btn">Browse Writers</a>
+          <a class="btn btn-outline" href="register.html?role=writer" id="join-btn">Join as Writer</a>
+        </div>
+
+        <div class="hero-stats" aria-hidden="true">
+          <div class="stat"><div class="stat-value" data-target="1200">0</div><div class="stat-label">Projects Delivered</div></div>
+          <div class="stat"><div class="stat-value" data-target="850">0</div><div class="stat-label">Verified Writers</div></div>
+          <div class="stat"><div class="stat-value" data-target="97">0</div><div class="stat-label">Client Satisfaction (%)</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section id="features" class="cards reveal">
+      <h2>How Spark Writers Helps</h2>
+      <div class="cards-grid">
+        <div class="card feature">
+          <div class="icon blue"></div>
+          <h3>Verified Talent</h3>
+          <p>Writers pass verification checks and showcase real work â€” hire with confidence.</p>
+        </div>
+        <div class="card feature">
+          <div class="icon green"></div>
+          <h3>Secure Payments</h3>
+          <p>Payments go through our secure channels; writers get paid on completion or per milestones.</p>
+        </div>
+        <div class="card feature">
+          <div class="icon red"></div>
+          <h3>Fast Turnaround</h3>
+          <p>Need urgent work? Filter writers by availability and delivery time.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section id="how" class="cards reveal">
+      <h2>How It Works</h2>
+      <ol class="how-list">
+        <li><strong>Post a brief:</strong> Describe the project, deadline and budget.</li>
+        <li><strong>Choose a writer:</strong> Review proposals and writer profiles.</li>
+        <li><strong>Pay securely:</strong> Use our secure checkout. Release funds on delivery.</li>
+      </ol>
+    </section>
+
+    <!-- Pricing CTA -->
+    <section id="pricing" class="cards reveal">
+      <h2>Plans That Work</h2>
+      <div class="cards-grid">
+        <div class="card">
+          <h3>Starter</h3>
+          <p class="lead">For occasional projects</p>
+          <p><strong>KES 500</strong> per project</p>
+          <p><a class="btn" href="register.html">Get Started</a></p>
+        </div>
+        <div class="card">
+          <h3>Pro</h3>
+          <p class="lead">For regular clients</p>
+          <p><strong>KES 2,000</strong> monthly credits</p>
+          <p><a class="btn gradient" href="register.html">Choose Pro</a></p>
+        </div>
+        <div class="card">
+          <h3>Writer</h3>
+          <p class="lead">For writers joining</p>
+          <p><strong>KES 200</strong> activation fee (STK Pay)</p>
+          <p><a class="btn btn-outline" href="register.html?role=writer">Apply</a></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="testimonials reveal">
+      <h2>Testimonials</h2>
+      <div class="cards-grid">
+        <div id="testimonialsGrid"></div>
+      </div>
+      <p class="muted">Have feedback? <a href="testimonials.html">Leave a testimonial</a></p>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="cards reveal cta-large">
+      <h2>Ready to start?</h2>
+      <p>Post your brief and get matched with writers today.</p>
+      <p><a class="btn gradient" href="register.html">Post a Project</a> <a class="btn btn-outline" href="login.html">Log in</a></p>
+    </section>
+
+  </main>
+
+  <div id="site-footer"></div>
+  <script src="assets/includes-loader.js"></script>
+  <script src="assets/db.js"></script>
+  <script>
+  // animate stats and reveal elements
+  document.addEventListener('DOMContentLoaded', function(){
+    // reveal animations: add `in` to elements so CSS shows them
+    document.querySelectorAll('.reveal').forEach(function(el){ el.classList.add('in'); });
+
+    // animate stats
+    document.querySelectorAll('.stat-value').forEach(function(el){
+      var target = parseInt(el.dataset.target || 0,10) || 0; var cur = 0; var step = Math.max(1, Math.floor(target/40)); var iv = setInterval(function(){ cur += step; if (cur >= target) { el.textContent = target; clearInterval(iv); } else el.textContent = cur; }, 20);
+    });
+
+    // load testimonials from client-side DB
+    if (window._DB && window._DB.ready) {
+      window._DB.ready.then(function(){
+        var t = window._DB.query("SELECT name,message,rating FROM testimonials WHERE is_approved=1 ORDER BY created_at DESC LIMIT 6");
+        var grid = document.getElementById('testimonialsGrid');
+        if (!t || t.length===0) {
+          grid.innerHTML = '<div class="card"><p>No testimonials yet.</p></div>';
+        } else {
+          grid.innerHTML = '';
+          t.forEach(function(tt){ var d=document.createElement('div'); d.className='card'; d.innerHTML = '<p class="quote">"'+(tt.message||'')+'"</p><p class="by">— '+(tt.name||'Guest')+' <span class="muted">'+('★'.repeat(tt.rating||5))+'</span></p>'; grid.appendChild(d); });
+        }
+      }).catch(function(){ document.getElementById('testimonialsGrid').innerHTML = '<div class="card"><p>No testimonials</p></div>'; });
+    }
+  });
+  </script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="styles.css">
+  <title>Admin Dashboard</title>
+</head>
+<body>
+  <div id="site-header"></div>
+  <main class="container">
+    <h1>Admin Dashboard</h1>
+    <div class="cards" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));display:grid;gap:1rem;margin-bottom:1rem">
+      <div class="card"><h3>Clients</h3><div class="muted" id="statClients">Loading...</div></div>
+      <div class="card"><h3>Writers</h3><div class="muted" id="statWriters">Loading...</div></div>
+      <div class="card"><h3>Payments</h3><div class="muted" id="statPayments">Loading...</div></div>
+      <div class="card"><h3>Pending Testimonials</h3><div class="muted" id="statPending">Loading...</div></div>
+    </div>
+
+    <section class="cards" style="display:grid;grid-template-columns:2fr 1fr;gap:1rem">
+      <div class="card">
+        <h2>Platform Activity</h2>
+        <canvas id="activityChart" width="600" height="220" aria-label="Platform activity chart"></canvas>
+      </div>
+      <div class="card">
+        <h2>Quick Actions</h2>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button id="refreshData" class="btn">Refresh Data</button>
+          <button id="exportSql" class="btn btn-outline">Export Demo DB (SQL)</button>
+          <button id="seedMore" class="btn btn-outline">Seed More Demo Data</button>
+        </div>
+      </div>
+    </section>
+
+    <section style="margin-top:1rem">
+      <h2>Manage Testimonials</h2>
+      <div id="testimonialsAdmin"></div>
+    </section>
+
+    <section style="margin-top:1rem">
+      <h2>Recent Payments</h2>
+      <div id="paymentsAdmin"></div>
+    </section>
+
+    <section style="margin-top:1rem">
+      <h2>Manage Users</h2>
+      <div id="admin-users">Loading users…</div>
+    </section>
+  </main>
+  <div id="site-footer"></div>
+  <script src="assets/config.example.js"></script>
+  <script src="assets/includes-loader.js"></script>
+  <script src="assets/db.js"></script>
+  <script src="assets/admin.js"></script>
+  <script>
+  window._DB.ready.then(function(){ /* admin.js handles stats and panels */ });
+  </script>
+</body>
+</html>

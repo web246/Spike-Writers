@@ -1,0 +1,58 @@
+<header class="site-header">
+  <div class="container nav">
+    <a class="brand" href="/spark-writers/">Spark Writers</a>
+    <nav>
+      <div class="nav-guest">
+        <a href="/index.html">Home</a>
+        <a href="/#about">About</a>
+        <a href="/#goal">Our Goal</a>
+        <a href="/#contact">Contact</a>
+        <span class="menu" id="writersMenu"><a class="drop-toggle" href="/spark-writers/writers.html">Writers ▾</a>
+          <div class="dropdown">
+            <a href="/writers.html">All Writers</a>
+            <a href="/writers_index.html">Top Writers</a>
+            <a href="/register.html">Become a Writer</a>
+          </div>
+        </span>
+        <a href="/public-testimonials.html">Testimonials</a>
+        <a href="/register.html">Signup</a>
+        <a href="/public-login.html">Login</a>
+      </div>
+      <div class="nav-auth" style="display:none;">
+        <a href="/clients_index.html">Home</a>
+        <a id="adminLink" href="/dashboard.html" style="display:none">Admin</a>
+        <span class="menu" id="writersMenuAuth"><a class="drop-toggle" href="/spark-writers/writers.html">Writers ▾</a>
+          <div class="dropdown">
+            <a href="/writers.html">All Writers</a>
+            <a href="/writers_index.html">Top Writers</a>
+          </div>
+        </span>
+        <a href="/#contact">Contact</a>
+        <a href="/clients_profile.html">Profile</a>
+        <a href="#" id="logoutLink">Logout</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<script>
+document.addEventListener('click', function(e){
+  const toggle = e.target.closest('.drop-toggle');
+  if (!toggle) { document.querySelectorAll('.menu').forEach(m=>m.classList.remove('open')); return; }
+  const menu = toggle.parentElement; menu.classList.toggle('open');
+});
+
+// simple auth state: switch nav views based on localStorage.currentUser
+function updateNavForAuth(){
+  try{
+    var u = JSON.parse(localStorage.getItem('currentUser')||'null');
+  }catch(e){var u=null}
+  if (u && u.role){ document.querySelectorAll('.nav-guest').forEach(el=>el.style.display='none'); document.querySelectorAll('.nav-auth').forEach(el=>el.style.display='block');
+    var adminLink = document.getElementById('adminLink'); if (adminLink) adminLink.style.display = (u.role==='admin') ? 'inline-block' : 'none';
+  }
+  else { document.querySelectorAll('.nav-guest').forEach(el=>el.style.display='block'); document.querySelectorAll('.nav-auth').forEach(el=>el.style.display='none'); }
+}
+document.addEventListener('DOMContentLoaded', updateNavForAuth);
+document.addEventListener('site:auth-changed', updateNavForAuth);
+document.addEventListener('click', function(e){ if (e.target && e.target.id === 'logoutLink'){ localStorage.removeItem('currentUser'); document.dispatchEvent(new Event('site:auth-changed')); } });
+</script>

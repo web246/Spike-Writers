@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="/spark-writers/styles.css">
+  <title>Spark Writers — Writers</title>
+</head>
+<body>
+  <div id="site-header"></div>
+  <main class="container">
+    <h1>Writers</h1>
+    <p>Find expert writers. Use filters to narrow results and click a writer for details.</p>
+    <div class="controls">
+      <input id="search" placeholder="Search by name, skill or headline" style="width:60%" />
+      <select id="availability"><option value="">Any availability</option><option>Available</option><option>Part-time</option></select>
+    </div>
+    <div id="writersList" class="grid"></div>
+    <template id="writerTpl"><div class="card writer-item"><img class="avatar" src="/spark-writers/assets/img/default-avatar.png" alt="avatar"/><div class="body"><h3 class="name"></h3><p class="headline muted"></p><p class="skills"></p><div class="meta"><span class="price"></span><button class="view">View</button> <button class="fav">Favorite</button></div></div></div></template>
+  </main>
+  <div id="site-footer"></div>
+  <script src="/spark-writers/assets/includes-loader.js"></script>
+  <script src="/spark-writers/assets/db.js"></script>
+  <script>
+  function renderWriters(list){
+    var out=document.getElementById('writersList'); out.innerHTML='';
+    var tpl=document.getElementById('writerTpl');
+    list.forEach(function(w){
+      var node = tpl.content.cloneNode(true);
+      var el = node.querySelector('.writer-item');
+      el.querySelector('.avatar').src = w.profile_photo || '/spark-writers/assets/img/default-avatar.png';
+      el.querySelector('.name').textContent = w.name;
+      el.querySelector('.headline').textContent = w.headline||'';
+      el.querySelector('.skills').textContent = w.skills||'';
+      el.querySelector('.price').textContent = w.price_range||'';
+      el.querySelector('.view').addEventListener('click', function(){ location.href = '/spark-writers/writer.html?id='+w.id; });
+      el.querySelector('.fav').addEventListener('click', function(){ try{ var user = JSON.parse(localStorage.getItem('currentUser')||'null'); if (!user) { alert('Login first (use the Login page)'); return; } window._DB.addFavorite(user.id||2,w.id).then(function(){ alert('Added to favorites'); }); }catch(e){ alert('Failed'); } });
+      out.appendChild(node);
+    });
+  }
+
+  function loadAndRender(){
+    window._DB.ready.then(function(){ window._DB.getWriters().then(function(list){ renderWriters(list); }); });
+  }
+  document.getElementById('search').addEventListener('input', function(){ var q=this.value.toLowerCase(); window._DB.getWriters().then(function(list){ renderWriters(list.filter(function(w){ return !q || (w.name+w.headline+w.skills).toLowerCase().indexOf(q)>-1; })); }); });
+  document.getElementById('availability').addEventListener('change', function(){ var val=this.value; window._DB.getWriters().then(function(list){ renderWriters(list.filter(function(w){ return !val || (w.availability||'').indexOf(val)>-1; })); }); });
+  loadAndRender();
+  </script>
+</body>
+</html>

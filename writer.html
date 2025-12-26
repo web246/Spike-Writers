@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="/spark-writers/styles.css">
+  <title>Spark Writers — Writer</title>
+</head>
+<body>
+  <div id="site-header"></div>
+  <main class="container">
+    <div id="profile" class="card" style="max-width:900px;margin:0 auto">
+      <div id="profileInner">Loading profile...</div>
+    </div>
+  </main>
+  <div id="site-footer"></div>
+  <script src="/spark-writers/assets/includes-loader.js"></script>
+  <script src="/spark-writers/assets/db.js"></script>
+  <script>
+  (function(){
+    var params=new URLSearchParams(location.search); var id = parseInt(params.get('id')||'1',10);
+    window._DB.ready.then(function(){
+      var rows = window._DB.query('SELECT u.id,u.name,wp.headline,wp.bio,wp.skills,wp.experience,wp.price_range,wp.availability,wp.profile_photo FROM users u JOIN writer_profiles wp ON wp.user_id=u.id WHERE u.id='+id+' LIMIT 1');
+      var out = document.getElementById('profileInner'); out.innerHTML='';
+      if (!rows || rows.length===0){ out.innerHTML = '<h2>Writer not found</h2><p class="muted">This profile is not available.</p>'; return; }
+      var w = rows[0];
+      var html = '<div style="display:flex;gap:18px;align-items:flex-start"><img src="'+(w.profile_photo||'https://via.placeholder.com/140')+'" style="width:140px;height:140px;border-radius:12px;object-fit:cover"/><div style="flex:1"><h2>'+ (w.name||'') +'</h2><div class="muted">'+(w.headline||'')+'</div><p style="margin-top:12px">'+(w.bio||'')+'</p><p><strong>Skills:</strong> '+(w.skills||'')+'</p><p><strong>Experience:</strong> '+(w.experience||'')+'</p><p><strong>Price:</strong> '+(w.price_range||'')+' • <em>'+ (w.availability||'') +'</em></p></div></div>';
+      html += '<div style="margin-top:14px"><button class="btn" id="hireBtn">Contact / Hire</button> <button class="btn btn-outline" id="favBtn">Add Favorite</button></div>';
+      out.innerHTML = html;
+      document.getElementById('favBtn').addEventListener('click', function(){ var user = JSON.parse(localStorage.getItem('currentUser')||'null'); if (!user) return alert('Login to favorite writers'); window._DB.addFavorite(user.id||2,w.id).then(function(){ alert('Added to favorites'); }); });
+      document.getElementById('hireBtn').addEventListener('click', function(){ alert('To hire this writer, contact via email or use the platform integration in production. (Demo)'); });
+    }).catch(function(){ document.getElementById('profileInner').textContent = 'Unable to load profile.'; });
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,2 @@
+# AI support removed. This file is intentionally left minimal.
+

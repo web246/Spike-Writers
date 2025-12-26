@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="styles.css">
+  <title>Clients — Dashboard</title>
+</head>
+<body>
+  <div id="site-header"></div>
+  <main class="container">
+    <header style="margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <h1>Browse Writers</h1>
+        <p class="muted">Search, filter and invite writers for your projects.</p>
+      </div>
+      <div id="client-welcome" class="muted"></div>
+    </header>
+
+    <section style="margin-bottom:1rem">
+      <input id="searchBox" placeholder="Search writers by name, skill or keyword" style="width:100%;padding:.5rem;border-radius:6px;border:1px solid #ddd">
+    </section>
+
+    <section class="cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;align-items:start">
+      <div id="writersList"></div>
+    </section>
+
+  </main>
+  <div id="site-footer"></div>
+  <script src="assets/includes-loader.js"></script>
+  <script src="assets/db.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', function(){
+    function renderWriters(list){
+      var container = document.getElementById('writersList'); container.innerHTML='';
+      if(!list || list.length===0){ container.innerHTML = '<div class="muted">No writers found.</div>'; return; }
+      list.forEach(function(w){
+        var card = document.createElement('div'); card.className='card';
+        var favs = JSON.parse(localStorage.getItem('favorites')||'[]');
+        var isFav = favs.indexOf(w.id)!==-1;
+        var initials = (w.name||'').split(' ').map(function(s){return s.charAt(0);}).slice(0,2).join('').toUpperCase() || 'W';
+        card.innerHTML = '<div style="display:flex;gap:12px;align-items:center">'
+          +'<div style="width:56px;height:56px;border-radius:12px;background:linear-gradient(180deg,var(--primary),#0a5be6);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:18px">'+initials+'</div>'
+          +'<div style="flex:1">'
+            +'<h3 style="margin:0">'+ (w.name||'Writer') +'</h3>'
+            +'<p class="muted" style="margin:.25rem 0">'+(w.headline||'Experienced writer')+'</p>'
+            +'<div style="display:flex;gap:.5rem;align-items:center;margin-top:.25rem">'
+              +'<div class="muted rating" data-id="'+w.id+'">Loading rating...</div>'
+              +'<div style="flex:1"></div>'
+              +'<button class="btn small review" data-id="'+w.id+'">Write Review</button>'
+              +'<button class="btn small contact" data-id="'+w.id+'">Contact</button>'
+              +'<button class="btn btn-outline small fav" data-id="'+w.id+'">'+(isFav?'Remove':'Favorite')+'</button>'
+            +'</div>'
+          +'</div>'
+        +'</div>';
+        container.appendChild(card);
+      });
+      // attach handlers
+      container.querySelectorAll('.fav').forEach(function(b){ b.addEventListener('click', onToggleFav); });
+      container.querySelectorAll('.contact').forEach(function(b){ b.addEventListener('click', onContact); });
+      container.querySelectorAll('.review').forEach(function(b){ b.addEventListener('click', onWriteReview); });
+      // populate ratings
+      Array.prototype.slice.call(container.querySelectorAll('.muted.rating')).forEach(function(el){
+        var id = el.dataset.id;
+        if(window._DB && window._DB.getWriterAvgRating){ window._DB.getWriterAvgRating(id).then(function(r){ el.textContent = (r.count? (r.avg+'★ ('+r.count+')') : 'No reviews'); }).catch(function(){ el.textContent='—'; }); }
+      });
+    }
+
+    function renderFavorites(favs){
+      var el = document.getElementById('favList'); el.innerHTML='';
+      if(!favs || favs.length===0){ el.innerHTML = '<p class="muted">No favorites yet. Click "Favorite" on a writer card.</p>'; return; }
+      favs.forEach(function(w){ var d=document.createElement('div'); d.className='card'; d.innerHTML='<h4>'+w.name+'</h4><p class="muted">'+(w.headline||'')+'</p>'; el.appendChild(d); });
+    }
+
+    function onToggleFav(ev){ var id = parseInt(ev.target.dataset.id,10); var favs = JSON.parse(localStorage.getItem('favorites')||'[]'); var idx = favs.indexOf(id); if(idx===-1){ favs.push(id); } else { favs.splice(idx,1); } localStorage.setItem('favorites', JSON.stringify(favs)); loadData(); }
+    function onContact(ev){ var id = ev.target.dataset.id; alert('Contact flow not yet implemented. Writer ID: '+id); }
+    function onWriteReview(ev){ var id = ev.target.dataset.id; var cu = JSON.parse(localStorage.getItem('currentUser')||'null'); if(!cu || cu.role!=='client'){ if(confirm('You must be signed in as a client to write a review. Go to login?')) location.href='public-login.php'; return; } var name = cu.name||cu.email||prompt('Your name for the review:'); if(!name) return; var rating = prompt('Rating (1-5):','5'); rating = parseInt(rating,10); if(!rating||rating<1||rating>5) { alert('Invalid rating'); return; } var message = prompt('Write your review message:'); window._DB.createReview({ writer_id: id, name: name, rating: rating, message: message }).then(function(){ alert('Thanks — your review was submitted and will appear after approval.'); loadData(); }).catch(function(e){ alert('Failed to submit review: '+(e&&e.message||e)); }); }
+
+    function loadData(){
+      if(!window._DB || !window._DB.ready) return;
+      window._DB.ready.then(function(){
+        var getUsers = window._DB.getUsers || (function(){ return Promise.resolve([]); });
+        getUsers().then(function(users){
+          var writers = users.filter(function(u){ return u.role==='writer' && u.active; });
+          // fetch ratings for all writers then sort by rating desc
+          var ratingPromises = writers.map(function(w){ return window._DB.getWriterAvgRating ? window._DB.getWriterAvgRating(w.id).then(function(r){ w._rating = r; return w; }).catch(function(){ w._rating = {avg:0,count:0}; return w; }) : Promise.resolve(w); });
+          Promise.all(ratingPromises).then(function(ws){
+            ws.sort(function(a,b){ var aa = (a._rating&&a._rating.avg)||0; var bb = (b._rating&&b._rating.avg)||0; return bb - aa; });
+            var favIds = JSON.parse(localStorage.getItem('favorites')||'[]');
+            var favList = ws.filter(function(w){ return favIds.indexOf(w.id)!==-1; });
+            renderWriters(ws);
+            renderFavorites(favList);
+            var cu = JSON.parse(localStorage.getItem('currentUser')||'null'); document.getElementById('client-welcome').textContent = cu ? ('Signed in: '+(cu.name||cu.email)) : '';
+          });
+        });
+      });
+    }
+
+    loadData();
+    document.getElementById('searchBox').addEventListener('input', function(){ var q=this.value.trim().toLowerCase(); var container = document.getElementById('writersList'); Array.prototype.slice.call(container.children).forEach(function(card){ var txt = card.textContent.toLowerCase(); card.style.display = q ? (txt.indexOf(q)!==-1 ? '' : 'none') : ''; }); });
+  });
+  </script>
+</body>
+</html>

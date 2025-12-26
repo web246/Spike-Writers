@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="styles.css">
+  <title>Spark Writers — Login</title>
+</head>
+<body>
+  <div id="site-header"></div>
+  <main class="container">
+    <div class="card" style="max-width:520px;margin:0 auto">
+      <h1 class="text-center">Login</h1>
+      <form id="loginForm">
+        <div class="form-row"><div class="col"><label>Email <input name="email" type="email" required placeholder="you@example.com"></label></div></div>
+        <div class="form-row"><div class="col"><label>Password <input name="password" type="password" required placeholder="Password"></label></div></div>
+        <div class="stack">
+          <button class="btn btn-primary" type="submit">Sign in</button>
+          <a href="register.html" class="btn btn-outline">Create account</a>
+        </div>
+      </form>
+      <p id="loginMsg" class="muted"></p>
+    </div>
+  </main>
+  <div id="site-footer"></div>
+  <script src="assets/includes-loader.js"></script>
+  <script src="assets/db.js"></script>
+  <script>
+  (function(){
+    var form = document.getElementById('loginForm'); var msg = document.getElementById('loginMsg');
+    function redirectAfterLogin(){
+      var params = new URLSearchParams(location.search); var next = params.get('next');
+      if (next){ location.href = next; return; }
+      try{
+        var cu = JSON.parse(localStorage.getItem('currentUser')||'null');
+        if(cu && cu.role){
+          var r = cu.role.toLowerCase();
+          if(r === 'admin'){ location.href = 'dashboard.html'; return; }
+          if(r === 'writer'){ location.href = 'writers_index.html'; return; }
+          if(r === 'client'){ location.href = 'clients_index.html'; return; }
+        }
+      }catch(e){ /* ignore and fallthrough */ }
+      location.href = 'clients_index.html';
+    }
+
+    function findUserByEmail(email){
+      // If DB offers an async getUsers(), use it (Supabase/demo wrapper). Otherwise try DB.query sync helper.
+      if(window._DB && typeof window._DB.getUsers === 'function'){
+        return window._DB.getUsers().then(function(list){ return list.find(function(u){ return u.email===email; }) || null; });
+      }
+      try{
+        var rows = window._DB.query("SELECT id,role,name,email,password,active FROM users WHERE email='"+email.replace(/'/g,"''")+"' LIMIT 1");
+        return Promise.resolve(rows && rows.length? rows[0] : null);
+      }catch(e){ return Promise.reject(e); }
+    }
+
+    form.addEventListener('submit', function(e){
+      e.preventDefault(); msg.textContent=''; var f=new FormData(form); var email = f.get('email'); var pass = f.get('password');
+      if(!window._DB || !window._DB.ready){ msg.textContent='Database not ready.'; return; }
+      window._DB.ready.then(function(){
+        // prefer DB.auth.signIn when available
+        var auth = window._DB && window._DB.auth;
+        if(auth && typeof auth.signIn === 'function'){
+          return auth.signIn({ email: email, password: pass }).then(function(res){
+            // for Supabase, after signIn fetch profile
+            if(window._DB.mode === 'supabase' && auth.getUserProfileByEmail){
+              return auth.getUserProfileByEmail(email).then(function(profile){ return { profile: profile || (res && (res.user||res.profile)) || res }; });
+            }
+            // handle demo mode where signIn returns the user object directly
+            return { profile: (res && (res.user || res.profile)) ? (res.user || res.profile) : res };
+          }).catch(function(err){
+            try{
+              var m = (err && (err.message || err.error || '') || '').toString().toLowerCase();
+              if(m.indexOf('not found') !== -1 || m.indexOf('user not found') !== -1){
+                msg.textContent='No user found — redirecting to registration...';
+                setTimeout(function(){ location.href = 'register.html?email='+encodeURIComponent(email); },800);
+                return Promise.reject(err);
+              }
+            }catch(e){ /* ignore */ }
+            return Promise.reject(err);
+          });
+        }
+        return findUserByEmail(email);
+      }).then(function(result){
+        var u = result && (result.profile || result) ;
+        if(!u){
+          msg.textContent='No user found — redirecting to registration...';
+          setTimeout(function(){ location.href = 'register.html?email='+encodeURIComponent(email); },800);
+          return;
+        }
+        // demo mode: result is the user object and password already validated in auth.signIn
+        // If user is a writer and not active, redirect to payment
+        if(u.role==='writer' && (u.active===0 || u.active===false || u.active==='0')){
+          localStorage.setItem('currentUser', JSON.stringify({id:u.id,role:u.role||'writer',name:u.name||u.email||'',email:u.email||''}));
+          msg.textContent = 'Writer account not activated. Redirecting to payment...';
+          setTimeout(function(){ location.href = 'pay.html?user='+encodeURIComponent(u.id); },700);
+          return;
+        }
+        localStorage.setItem('currentUser', JSON.stringify({id:u.id,role:u.role||'client',name:u.name||u.email||'',email:u.email||''}));
+        document.dispatchEvent(new Event('site:auth-changed'));
+        redirectAfterLogin();
+      }).catch(function(err){ console.error(err); msg.textContent='Login error: '+(err && err.message?err.message:err); });
+    });
+  })();
+  </script>
+</body>
+</html>
