@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="styles.css">
+  <title>Client — View</title>
+</head>
+<body>
+  <div id="site-header"></div>
+  <main class="container">
+    <a href="admin_clients.html">← Back</a>
+    <h1 id="title">Client</h1>
+    <div id="details"></div>
+  </main>
+  <div id="site-footer"></div>
+  <script src="assets/includes-loader.js"></script>
+  <script src="assets/db.js"></script>
+  <script>
+  function qs(name){ var params=new URLSearchParams(location.search); return params.get(name); }
+  document.addEventListener('DOMContentLoaded', function(){ var id = qs('id'); window._DB.ready.then(function(){ window._DB.getUsers().then(function(users){ var u = users.find(x=>String(x.id)===String(id)); if(!u) return document.getElementById('details').textContent='Not found'; var d = document.getElementById('details'); d.innerHTML = '<p><strong>Name:</strong> '+(u.name||'')+'</p><p><strong>Email:</strong> '+(u.email||'')+'</p><p><strong>Phone:</strong> '+(u.phone||'')+'</p><p><strong>Joined:</strong> '+(u.joined_at||'')+'</p><p><strong>Status:</strong> '+(u.active? 'Active':'Inactive')+'</p>'; }); }); });
+  </script>
+</body>
+</html>

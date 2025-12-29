@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="styles.css">
+  <title>Writer — View</title>
+</head>
+<body>
+  <div id="site-header"></div>
+  <main class="container">
+    <a href="admin_writers.html">← Back</a>
+    <h1 id="title">Writer</h1>
+    <div id="details"></div>
+    <div style="margin-top:1rem;"><button id="btnMessage" class="btn">Message Writer</button></div>
+  </main>
+  <div id="site-footer"></div>
+  <script src="assets/includes-loader.js"></script>
+  <script src="assets/db.js"></script>
+  <script>
+  function qs(name){ var params=new URLSearchParams(location.search); return params.get(name); }
+  document.addEventListener('DOMContentLoaded', function(){ var id = qs('id'); window._DB.ready.then(function(){ window._DB.getUsers().then(function(users){ var u = users.find(x=>String(x.id)===String(id)); if(!u) return document.getElementById('details').textContent='Not found'; var d = document.getElementById('details'); d.innerHTML = '<p><strong>Name:</strong> '+(u.name||'')+'</p><p><strong>Email:</strong> '+(u.email||'')+'</p><p><strong>Phone:</strong> '+(u.phone||'')+'</p><p><strong>Joined:</strong> '+(u.joined_at||'')+'</p><p><strong>Status:</strong> '+(u.active? 'Active':'Inactive')+'</p>'; document.getElementById('btnMessage').addEventListener('click', function(){ var subj = prompt('Subject','Message from Admin'); if(subj===null) return; var body = prompt('Message body'); if(body===null) return; // create conversation and message (demo/supabase)
+    window._DB.createConversation({project_id:null}).then(function(conv){ return window._DB.createMessage({ conversation_id: conv.id, sender_id: 1, body: 'Subject: '+subj+'\n\n'+body }); }).then(function(){ alert('Message created in conversations (demo).'); }).catch(function(e){ alert('Failed to send message: '+(e&&e.message||e)); }); }); }); }); });
+  </script>
+</body>
+</html>

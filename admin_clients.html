@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="styles.css">
+  <title>Admin — Clients</title>
+</head>
+<body>
+  <div id="site-header"></div>
+  <main class="container">
+    <h1>Clients</h1>
+    <div style="margin-bottom:1rem">
+      <button id="btnRefresh" class="btn">Refresh</button>
+      <button id="btnEmailSelected" class="btn btn-primary">Email Selected</button>
+      <button id="btnEmailAll" class="btn">Email All</button>
+    </div>
+    <table class="table" id="clientsTable">
+      <thead><tr><th><input id="checkAll" type="checkbox"></th><th>Date Joined</th><th>Name</th><th>Email</th><th>Phone</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </main>
+  <div id="site-footer"></div>
+  <script src="assets/includes-loader.js"></script>
+  <script src="assets/db.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', function(){
+    var table = document.querySelector('#clientsTable tbody');
+    var allCheckbox = document.getElementById('checkAll');
+    function load(){
+      window._DB.ready.then(function(){
+        window._DB.getUsers().then(function(users){
+          var clients = users.filter(u=>u.role==='client');
+          table.innerHTML='';
+          clients.forEach(function(c){
+            var tr=document.createElement('tr');
+            tr.innerHTML = '<td><input class="sel" data-email="'+(c.email||'')+'" type="checkbox" data-id="'+c.id+'"></td>'
+              +'<td>'+(c.joined_at||'')+'</td>'
+              +'<td>'+(c.name||'')+'</td>'
+              +'<td>'+(c.email||'')+'</td>'
+              +'<td>'+(c.phone||'')+'</td>'
+              +'<td>'+(c.active? 'Active':'Inactive')+'</td>'
+              +'<td><button class="btn small view" data-id="'+c.id+'">View</button></td>';
+            table.appendChild(tr);
+          });
+        });
+      });
+    }
+    document.getElementById('btnRefresh').addEventListener('click', load);
+    document.getElementById('btnEmailAll').addEventListener('click', function(){
+      window._DB.getUsers().then(function(users){ var emails = users.filter(u=>u.role==='client').map(u=>u.email).filter(Boolean); if(!emails.length) return alert('No client emails'); window.location.href = 'mailto:'+emails.join(','); });
+    });
+    document.getElementById('btnEmailSelected').addEventListener('click', function(){ var sels = Array.from(document.querySelectorAll('.sel:checked')).map(function(i){ return i.dataset.email; }).filter(Boolean); if(!sels.length) return alert('Select some clients'); window.location.href = 'mailto:'+sels.join(','); });
+    allCheckbox.addEventListener('change', function(){ document.querySelectorAll('.sel').forEach(function(cb){ cb.checked = allCheckbox.checked; }); });
+    table.addEventListener('click', function(ev){ if(ev.target.matches('.view')){ var id = ev.target.dataset.id; location.href = 'admin_client_view.html?id='+id; } });
+    load();
+  });
+  </script>
+</body>
+</html>

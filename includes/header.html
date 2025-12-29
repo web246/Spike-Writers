@@ -56,3 +56,37 @@ document.addEventListener('DOMContentLoaded', updateNavForAuth);
 document.addEventListener('site:auth-changed', updateNavForAuth);
 document.addEventListener('click', function(e){ if (e.target && e.target.id === 'logoutLink'){ localStorage.removeItem('currentUser'); document.dispatchEvent(new Event('site:auth-changed')); } });
 </script>
+
+<script>
+// Auth guard: redirect to login page unless path is whitelisted or user is authenticated
+(function(){
+  function isStaticAsset(path){ return path.indexOf('/assets/')===0 || path.indexOf('/includes/')===0 || path.indexOf('/scripts/')===0 || path.indexOf('/server_backup/')===0; }
+  function basename(p){ var s = p.split('/').pop()||''; if(s==='') return '/'; return s; }
+  var path = location.pathname || '/';
+  var name = basename(path);
+  var whitelist = ["/","index.html","login.html","public-login.html","register.html","public-testimonials.html","oauth.html","oauth-callback.html","pay.html","stk_callback.html","public-ai.html","phpinfo.html"];
+  if (isStaticAsset(path) || path.indexOf('/api/')===0) return;
+  if (whitelist.indexOf(name) !== -1) return; // don't guard these
+
+  try{ var cu = JSON.parse(localStorage.getItem('currentUser')||'null'); }catch(e){ cu = null; }
+  if (!cu || !cu.role){
+    var next = encodeURIComponent(location.pathname + (location.search||''));
+    location.href = 'login.html?next=' + next;
+  }
+})();
+
+// PWA: register simple service worker and add manifest
+(function(){
+  if ('serviceWorker' in navigator){
+    window.addEventListener('load', function(){
+      var swUrl = '/spark-writers/sw.js';
+      if (!location.pathname.match(/\/spark-writers\//)) { swUrl = '/sw.js'; }
+      navigator.serviceWorker.register(swUrl).catch(function(e){ console.warn('SW register failed', e); });
+    });
+  }
+  var link = document.createElement('link'); link.rel = 'manifest';
+  var manifestHref = '/spark-writers/manifest.json';
+  if (!location.pathname.match(/\/spark-writers\//)) { manifestHref = '/manifest.json'; }
+  link.href = manifestHref; document.head.appendChild(link);
+})();
+</script>

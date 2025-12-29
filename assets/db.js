@@ -85,6 +85,24 @@
         return Promise.resolve({ avg: avg, count: count });
       });
     };
+    // conversations/messages demo storage
+    DB._data.conversations = DB._data.conversations || [];
+    DB._data.messages = DB._data.messages || [];
+    DB.createConversation = function(c){ var id = (DB._data.conversations.reduce(function(m,r){return Math.max(m,r.id||0);},0)||0)+1; var conv = Object.assign({ id:id, project_id:c.project_id||null, created_at:(new Date()).toISOString() }, c); DB._data.conversations.push(conv); saveDemo(); return Promise.resolve(conv); };
+    DB.getConversationsForUser = function(userId){
+      // simple: return conversations that reference projects owned by user or where messages include user
+      var convs = DB._data.conversations.slice();
+      var res = convs.filter(function(conv){
+        if(conv.project_id){ var proj = (DB._data.projects||[]).find(function(p){return String(p.id)===String(conv.project_id);}); if(proj && String(proj.client_id)===String(userId)) return true; }
+        // if user sent or received messages in this conv
+        var msgs = (DB._data.messages||[]).filter(function(m){ return String(m.conversation_id)===String(conv.id) && String(m.sender_id)===String(userId); });
+        if(msgs && msgs.length) return true;
+        return false;
+      });
+      return Promise.resolve(res);
+    };
+    DB.createMessage = function(m){ var id = (DB._data.messages.reduce(function(mr,r){return Math.max(mr,r.id||0);},0)||0)+1; var msg = Object.assign({ id:id, conversation_id:m.conversation_id, sender_id:m.sender_id, body:m.body||'', created_at:(new Date()).toISOString(), is_read:0 }, m); DB._data.messages.push(msg); saveDemo(); return Promise.resolve(msg); };
+    DB.getMessages = function(conversationId){ return Promise.resolve((DB._data.messages||[]).filter(function(m){ return String(m.conversation_id)===String(conversationId); })); };
     DB.createUser = function(data){
       // simple uniqueness check on email
       if(!data || !data.email) return Promise.reject('email required');
@@ -171,6 +189,15 @@
             return { avg: avg, count: count };
           });
         };
+
+        // Conversations & messages wrappers for Supabase
+        DB.createConversation = function(c){ return supa.from('conversations').insert([c]).then(function(r){ if(r.error) return Promise.reject(r.error); return r.data && r.data[0]; }); };
+        DB.getConversationsForUser = function(userId){
+          // simplistic: fetch conversations that reference projects owned by this user
+          return supa.from('conversations').select('*').then(function(r){ if(r.error) return Promise.reject(r.error); return r.data; });
+        };
+        DB.createMessage = function(m){ return supa.from('messages').insert([m]).then(function(r){ if(r.error) return Promise.reject(r.error); return r.data && r.data[0]; }); };
+        DB.getMessages = function(conversationId){ return supa.from('messages').select('*').eq('conversation_id', conversationId).order('created_at',{ascending:true}).then(function(r){ if(r.error) return Promise.reject(r.error); return r.data; }); };
 
         // Auth wrapper using Supabase Auth + users table for profiles
         DB.auth = {
