@@ -3,7 +3,7 @@
   function buildNav(){
     var cu = null;
     try{ cu = JSON.parse(localStorage.getItem('currentUser')||'null'); }catch(e){ cu = null; }
-    var left = '<a href="index.html" class="brand">Spark Writers</a>';
+    var left = '<a href="index.html" class="brand">SpikeWriters</a>';
     var links = [];
     links.push('<a href="index.html">Home</a>');
     links.push('<a href="writers.html">Writers</a>');
@@ -39,7 +39,7 @@
     var header = document.getElementById('site-header');
     if(header){ header.innerHTML = '<header class="site-header">'+buildNav()+'</header>'; }
     var footer = document.getElementById('site-footer');
-    if(footer){ footer.innerHTML = '<footer class="site-footer"><div class="container"><p>&copy; '+new Date().getFullYear()+' Spark Writers</p></div></footer>'; }
+    if(footer){ footer.innerHTML = '<footer class="site-footer"><div class="container"><p>&copy; '+new Date().getFullYear()+' SpikeWriters</p></div></footer>'; }
 
     // attach logout handler
     var btn = document.getElementById('logoutBtn');
