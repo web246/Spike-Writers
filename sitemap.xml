@@ -1,50 +1,50 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <!-- Replace https://your-domain.example with your real site base URL before deploying -->
+  <!-- Sitemap for https://web246.github.io/Spike-Writers/ -->
   <url>
-    <loc>https://your-domain.example/</loc>
+    <loc>https://web246.github.io/Spike-Writers/</loc>
     <lastmod>2026-06-16</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://your-domain.example/index.html</loc>
+    <loc>https://web246.github.io/Spike-Writers/index.html</loc>
     <lastmod>2026-06-16</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://your-domain.example/writers.html</loc>
+    <loc>https://web246.github.io/Spike-Writers/writers.html</loc>
     <lastmod>2026-06-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://your-domain.example/public-writers.html</loc>
+    <loc>https://web246.github.io/Spike-Writers/public-writers.html</loc>
     <lastmod>2026-06-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://your-domain.example/projects.html</loc>
+    <loc>https://web246.github.io/Spike-Writers/projects.html</loc>
     <lastmod>2026-06-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://your-domain.example/register.html</loc>
+    <loc>https://web246.github.io/Spike-Writers/register.html</loc>
     <lastmod>2026-06-16</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://your-domain.example/login.html</loc>
+    <loc>https://web246.github.io/Spike-Writers/login.html</loc>
     <lastmod>2026-06-16</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://your-domain.example/testimonials.html</loc>
+    <loc>https://web246.github.io/Spike-Writers/testimonials.html</loc>
     <lastmod>2026-06-16</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>

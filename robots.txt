@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://web246.github.io/Spike-Writers/sitemap.xml
