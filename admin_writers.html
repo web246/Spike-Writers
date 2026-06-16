@@ -3,6 +3,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="google-site-verification" content="oGrGdaVJcJlIf3UBFDAkUccRJT3hrdd592WGs6c6fSI" />
+  <meta name="description" content="SpikeWriters — Hire verified writers for essays, blog posts, marketing copy and more. Fast turnaround, secure payments, and quality-checked talent." />
+  <meta name="keywords" content="SpikeWriters, writers for hire, freelance writers, essay writers, blog writers, copywriting, content writing, verified writers, hire writers, writing services" />
+  <link rel="canonical" href="/" />
+  <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml" />
+  <meta property="og:title" content="SpikeWriters — Find trusted writers, fast" />
+  <meta property="og:description" content="Hire verified writers for essays, marketing copy, blog posts and more. Secure payments and on-time delivery." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="/" />
+  <meta property="og:site_name" content="SpikeWriters" />
+
   <link rel="stylesheet" href="styles.css">
   <title>Admin — Writers</title>
 </head>
@@ -52,7 +63,7 @@
     });
     document.getElementById('btnEmailSelected').addEventListener('click', function(){ var sels = Array.from(document.querySelectorAll('.sel:checked')).map(function(i){ return i.dataset.email; }).filter(Boolean); if(!sels.length) return alert('Select some writers'); window.location.href = 'mailto:'+sels.join(','); });
     allCheckbox.addEventListener('change', function(){ document.querySelectorAll('.sel').forEach(function(cb){ cb.checked = allCheckbox.checked; }); });
-    table.addEventListener('click', function(ev){ if(ev.target.matches('.view')){ var id = ev.target.dataset.id; location.href = 'admin_writer_view.html?id='+id; } if(ev.target.matches('.msg')){ var id=ev.target.dataset.id; var subject = encodeURIComponent('Message from Spark Writers Admin'); var body = encodeURIComponent(''); window.location.href = 'mailto:'+ev.target.closest('tr').querySelector('td:nth-child(4)').textContent+'?subject='+subject+'&body='+body; } });
+    table.addEventListener('click', function(ev){ if(ev.target.matches('.view')){ var id = ev.target.dataset.id; location.href = 'admin_writer_view.html?id='+id; } if(ev.target.matches('.msg')){ var id=ev.target.dataset.id; var subject = encodeURIComponent('Message from SpikeWriters Admin'); var body = encodeURIComponent(''); window.location.href = 'mailto:'+ev.target.closest('tr').querySelector('td:nth-child(4)').textContent+'?subject='+subject+'&body='+body; } });
     load();
   });
   </script>
